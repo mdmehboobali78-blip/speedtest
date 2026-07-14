@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPN PRO - 100% Real Speed Test</title>
+    <style>
+        :root {
+            --bg-primary: #0A0D1A;
+            --bg-secondary: #121629;
+            --border-color: #202642;
+            --accent-start: #3B82F6;
+            --accent-end: #06B6D4;
+            --text-main: #FFFFFF;
+            --text-muted: #6B7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 28px;
+            padding: 35px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 30px;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto 35px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gauge-outer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid var(--border-color);
+            border-top-color: var(--accent-start);
+            border-right-color: var(--accent-end);
+            transform: rotate(-45deg);
+            transition: transform 0.3s ease;
+        }
+
+        .speed-number {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .speed-unit {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin-bottom: 35px;
+        }
+
+        .metric-card {
+            background-color: rgba(10, 13, 26, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 16px;
+            text-align: left;
+        }
+
+        .metric-card.active {
+            border-color: var(--accent-start);
+        }
+
+        .metric-card.full-width {
+            grid-column: span 2;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            cursor: pointer;
+            background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.25);
+            text-transform: uppercase;
+        }
+
+        .btn-action:disabled {
+            background: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>VPN PRO</h1>
+            <p>100% Real Speed Diagnostic</p>
+        </div>
+
+        <div class="gauge-container">
+            <div class="gauge-outer" id="gaugeRing"></div>
+            <div class="gauge-inner">
+                <div class="speed-number" id="mainSpeed">0.0</div>
+                <div class="speed-unit">Mbps</div>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card" id="cardDownload">
+                <div class="metric-label">⬇️ Download</div>
+                <div class="metric-value" id="valDownload">0.00 <span style="font-size:12px;color:var(--text-muted)">Mbps</span></div>
+            </div>
+            
+            <div class="metric-card" id="cardUpload">
+                <div class="metric-label">⬆️ Upload</div>
+                <div class="metric-value" id="valUpload">0.00 <span style="font-size:12px;color:var(--text-muted)">Mbps</span></div>
+            </div>
+            
+            <div class="metric-card full-width" id="cardPing">
+                <div class="metric-label">📡 Ping Latency</div>
+                <div class="metric-value" id="valPing">0 <span style="font-size:12px;color:var(--text-muted)">ms</span></div>
+            </div>
+        </div>
+
+        <button class="btn-action" id="btnStart" onclick="startRealTest()">Start Real Test</button>
+    </div>
+
+    <script>
+        async function startRealTest() {
+            const btn = document.getElementById('btnStart');
+            const mainSpeed = document.getElementById('mainSpeed');
+            const valDownload = document.getElementById('valDownload');
+            const valUpload = document.getElementById('valUpload');
+            const valPing = document.getElementById('valPing');
+            const gaugeRing = document.getElementById('gaugeRing');
+            
+            const cardDownload = document.getElementById('cardDownload');
+            const cardUpload = document.getElementById('cardUpload');
+            const cardPing = document.getElementById('cardPing');
+
+            btn.disabled = true;
+            btn.innerText = "TESTING REAL SPEED...";
+            mainSpeed.innerText = "0.0";
+            valDownload.innerHTML = `0.00 <span style="font-size:12px;color:var(--text-muted)">Mbps</span>`;
+            valUpload.innerHTML = `0.00 <span style="font-size:12px;color:var(--text-muted)">Mbps</span>`;
+            valPing.innerHTML = `0 <span style="font-size:12px;color:var(--text-muted)">ms</span>`;
+            gaugeRing.style.transform = "rotate(-45deg)";
+
+            // 1. REAL PING TEST
+            cardPing.classList.add('active');
+            const pingStart = performance.now();
+            try {
+                // Cloudflare network head request to measure direct latency
+                await fetch('https://1.1.1.1/cdn-cgi/trace', { method: 'HEAD', mode: 'no-cors', cache: 'no-store' });
+                const pingTime = Math.round(performance.now() - pingStart);
+                valPing.innerHTML = `${pingTime} <span style="font-size:12px;color:var(--text-muted)">ms</span>`;
+                cardPing.classList.remove('active');
+            } catch (e) {
+                valPing.innerHTML = `Error <span style="font-size:12px;color:var(--text-muted)">ms</span>`;
+            }
+
+            // 2. REAL DOWNLOAD TEST (Bina kisi simulation ke direct actual file load time)
+            cardDownload.classList.add('active');
+            // Cloudflare ki safe, fast CDN 5MB sample test file link
+            const downloadUrl = "https://speed.cloudflare.com/__down?bytes=5000000"; 
+            const fileSizeBits = 5000000 * 8; // 5MB to bits
+
+            const dlStart = performance.now();
+            try {
+                const response = await fetch(downloadUrl, { cache: 'no-store' });
+                const reader = response.body.getReader();
+                let loadedBytes = 0;
+
+                // Chunky byte buffer loop to trace live speed changes
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    loadedBytes += value.length;
+                    
+                    let currentDuration = (performance.now() - dlStart) / 1000;
+                    let liveMbps = ((loadedBytes * 8) / currentDuration / (1024 * 1024)).toFixed(2);
+                    
+                    if (liveMbps !== "Infinity") {
+                        mainSpeed.innerText = liveMbps;
+                        valDownload.innerHTML = `${liveMbps} <span style="font-size:12px;color:var(--text-muted)">Mbps</span>`;
+                        let angle = Math.min((liveMbps / 100) * 180 - 45, 135);
+                        gaugeRing.style.transform = `rotate(${angle}deg)`;
+                    }
+                }
+
+                const dlEnd = performance.now();
+                const totalDuration = (dlEnd - dlStart) / 1000;
+                const finalMbps = parseFloat(((fileSizeBits / totalDuration) / (1024 * 1024)).toFixed(2));
+
+                mainSpeed.innerText = finalMbps;
+                valDownload.innerHTML = `${finalMbps} <span style="font-size:12px;color:var(--text-muted)">Mbps</span>`;
+                cardDownload.classList.remove('active');
+
+                // 3. REAL UPLOAD TEST
+                cardUpload.classList.add('active');
+                const uploadUrl = "https://speed.cloudflare.com/__up";
+                const uploadData = new Uint8Array(2000000); // 2MB Upload payload
+                const uploadSizeBits = 2000000 * 8;
+
+                const ulStart = performance.now();
+                await fetch(uploadUrl, {
+                    method: 'POST',
+                    body: uploadData,
+                    cache: 'no-store'
+                });
+                const ulEnd = performance.now();
+                const ulDuration = (ulEnd - ulStart) / 1000;
+                const finalUlMbps = parseFloat(((uploadSizeBits / ulDuration) / (1024 * 1024)).toFixed(2));
+
+                valUpload.innerHTML = `${finalUlMbps} <span style="font-size:12px;color:var(--text-muted)">Mbps</span>`;
+                cardUpload.classList.remove('active');
+
+                // Return back values to default primary
+                btn.disabled = false;
+                btn.innerText = "Start Real Test";
+                mainSpeed.innerText = finalMbps;
+                let finalAngle = Math.min((finalMbps / 100) * 180 - 45, 135);
+                gaugeRing.style.transform = `rotate(${finalAngle}deg)`;
+
+            } catch (err) {
+                console.log(err);
+                btn.disabled = false;
+                btn.innerText = "Retry Real Test";
+                cardDownload.classList.remove('active');
+                cardUpload.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
